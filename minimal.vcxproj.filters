@@ -14,9 +14,12 @@
     <ClCompile Include="minimal.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="MSWTerminalServices.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="..\sample.rc">
+    <ResourceCompile Include="$(WXWIN)\samples\sample.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
   </ItemGroup>

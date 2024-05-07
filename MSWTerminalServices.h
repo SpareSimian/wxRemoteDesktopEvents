@@ -2,110 +2,72 @@
 
 #ifdef __WXMSW__
 
-#include <wtsapi32.h> // terminal services session change notification
+#include <wx/window.h>
 
-class TerminalSessionChangeNotification
+namespace MSWTerminalServices {
+   
+enum SessionChangeType
 {
-   HWND hwnd; // for deregistration
-public:
-   TerminalSessionChangeNotification(HWND hwnd);
-   ~TerminalSessionChangeNotification();
-   // invoke from client window's version of this routine
-   void  MSWWindowProc(WXUINT message, WXWPARAM wParam, WXLPARAM lParam);
-
-   // The session identified by lParam was connected to the console terminal or RemoteFX session.
-   virtual void OnConsoleConnect(wxInt64 WXUNUSED(sessionID)) {}
-   // The session identified by lParam was disconnected from the console terminal or RemoteFX session.
-   virtual void OnConsoleDisconnect(wxInt64 WXUNUSED(sessionID)) {}
-   // The session identified by lParam was connected to the remote terminal.
-   virtual void OnRemoteConnect(wxInt64 WXUNUSED(sessionID)) {}
-   // The session identified by lParam was disconnected from the remote terminal.
-   virtual void OnRemoteDisconnect(wxInt64 WXUNUSED(sessionID)) {}
-   // A user has logged on To the session identified by lParam.
-   virtual void OnSessionLogon(wxInt64 WXUNUSED(sessionID)) {}
-   // A user has logged off the session identified by lParam.
-   virtual void OnSessionLogoff(wxInt64 WXUNUSED(sessionID)) {}
-   // The session identified by lParam has been locked.
-   virtual void OnSessionLock(wxInt64 WXUNUSED(sessionID)) {}
-   // The session identified by lParam has been unlocked.
-   virtual void OnSessionUnlock(wxInt64 WXUNUSED(sessionID)) {}
-   // The session identified by lParam has changed its remote controlled status. To determine the status, call GetSystemMetrics and check the SM_REMOTECONTROL metric.
-   virtual void OnSessionRemoteControl(wxInt64 WXUNUSED(sessionID)) {}
-   // Reserved for future use.
-   virtual void OnSessionCreate(wxInt64 WXUNUSED(sessionID)) {}
-   // Reserved for future use.
-   virtual void OnSessionTerminate(wxInt64 WXUNUSED(sessionID)) {}
-
+      // The session identified by lParam was connected to the console terminal or RemoteFX session.
+   CONSOLE_CONNECT,
+      // The session identified by lParam was disconnected from the console terminal or RemoteFX session.
+   CONSOLE_DISCONNECT,
+      // The session identified by lParam was connected to the remote terminal.
+   REMOTE_CONNECT,
+      // The session identified by lParam was disconnected from the remote terminal.
+   REMOTE_DISCONNECT,
+      // A user has logged on To the session identified by lParam.
+   SESSION_LOGON,
+      // A user has logged off the session identified by lParam.
+   SESSION_LOGOFF,
+      // The session identified by lParam has been locked.
+   SESSION_LOCK,
+      // The session identified by lParam has been unlocked.
+   SESSION_UNLOCK,
+      // The session identified by lParam has changed its remote controlled status. To determine the status, call GetSystemMetrics and check the SM_REMOTECONTROL metric.
+   SESSION_REMOTE_CONTROL,
+      // Reserved for future use.
+   SESSION_CREATE,
+      // Reserved for future use.
+   SESSION_TERMINATE
 };
 
-TerminalSessionChangeNotification::TerminalSessionChangeNotification(HWND hwnd_) :
-    hwnd(hwnd_)
+class SessionChangeEvent : public wxEvent
 {
-   ::WTSRegisterSessionNotification(hwnd, NOTIFY_FOR_THIS_SESSION);
-}
+public:
+   SessionChangeEvent(SessionChangeType sessionChangeType_, wxInt64 sessionID_) :
+       sessionChangeType(sessionChangeType_), sessionID(sessionID_)
+   {}
+   wxEvent* Clone() const override;
 
-TerminalSessionChangeNotification::~TerminalSessionChangeNotification()
+   SessionChangeType sessionChangeType;
+   wxInt64 sessionID;
+};
+
+extern const wxEventType SessionChangeEventType;
+
+typedef void (wxEvtHandler::*SessionChangeEventFunction)(SessionChangeEvent &);
+
+#define EVT_THREAD_EXCEPTION(fn) \
+    DECLARE_EVENT_TABLE_ENTRY( SessionChangeEventType, wxID_ANY, wxID_ANY, \
+                               (wxObjectEventFunction)(wxEventFunction) \
+                               wxStaticCastEvent(SessionChangeEventFunction, &fn), \
+                               (wxObject*) NULL  ),
+
+class SessionChangeNotification
 {
-   ::WTSUnRegisterSessionNotification(hwnd);
-}
+   wxWindow& win; // for event dispatch and deregistration
+public:
+   SessionChangeNotification(wxWindow& win);
+   ~SessionChangeNotification();
+   private:
+      static bool MSWWindowProc(wxWindow* win, WXUINT message, WXWPARAM wParam, WXLPARAM lParam);
+      static bool HandleEvent(wxWindow* win, SessionChangeType sessionChangeType, wxInt64 sessionID);
 
-void TerminalSessionChangeNotification::MSWWindowProc(WXUINT message, WXWPARAM wParam, WXLPARAM lParam)
-{
-   if (WM_WTSSESSION_CHANGE == message)
-   {
-      const wxInt64 sessionID = lParam;
-      switch (wParam)
-      {
-      case WTS_CONSOLE_CONNECT:
-         // The session identified by lParam was connected to the
-         // console terminal or RemoteFX session.
-         OnConsoleConnect(sessionID);
-         break;
-      case WTS_CONSOLE_DISCONNECT:
-         // The session identified by lParam was disconnected from the console terminal or RemoteFX session.
-         OnConsoleDisconnect(sessionID);
-         break;
-      case WTS_REMOTE_CONNECT:
-         // The session identified by lParam was connected to the remote terminal.
-         OnRemoteConnect(sessionID);
-         break;
-      case WTS_REMOTE_DISCONNECT:
-         // The session identified by lParam was disconnected from the remote terminal.
-         OnRemoteDisconnect(sessionID);
-         break;
-      case WTS_SESSION_LOGON:
-         // A user has logged on To the session identified by lParam.
-         OnSessionLogon(sessionID);
-         break;
-      case WTS_SESSION_LOGOFF:
-         // A user has logged off the session identified by lParam.
-         OnSessionLogoff(sessionID);
-         break;
-      case WTS_SESSION_LOCK:
-         // The session identified by lParam has been locked.
-         OnSessionLock(sessionID);
-         break;
-      case WTS_SESSION_UNLOCK:
-         // The session identified by lParam has been unlocked.
-         OnSessionUnlock(sessionID);
-         break;
-      case WTS_SESSION_REMOTE_CONTROL:
-         // The session identified by lParam has changed its remote controlled status. To determine the status, call GetSystemMetrics and check the SM_REMOTECONTROL metric.
-         OnSessionRemoteControl(sessionID);
-         break;
-      case WTS_SESSION_CREATE:
-         // Reserved for future use.
-         OnSessionCreate(sessionID);
-         break;
-      case WTS_SESSION_TERMINATE:
-         // Reserved for future use.
-         OnSessionTerminate(sessionID);
-         break;
-      }
-   }
-}
+   wxDECLARE_NO_COPY_CLASS(SessionChangeNotification);
+};
 
-#pragma comment(lib, "wtsapi32.lib")
+}
 
 #endif
 

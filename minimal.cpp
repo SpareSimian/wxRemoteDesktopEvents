@@ -68,6 +68,8 @@ public:
     void OnAbout(wxCommandEvent& event);
 
 private:
+   MSWTerminalServices::SessionChangeNotification sessionChangeNotification;
+   
     // any class wishing to process wxWidgets events must use this macro
     wxDECLARE_EVENT_TABLE();
 };
@@ -142,7 +144,10 @@ bool MyApp::OnInit()
 
 // frame constructor
 MyFrame::MyFrame(const wxString& title)
-       : wxFrame(nullptr, wxID_ANY, title)
+:
+    sessionChangeNotification(*this),
+    wxFrame(nullptr, wxID_ANY, title)
+
 {
     // set the frame icon
     SetIcon(wxICON(sample));

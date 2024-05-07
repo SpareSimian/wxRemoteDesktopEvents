@@ -439,6 +439,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="minimal.cpp" />
+    <ClCompile Include="MSWTerminalServices.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="$(WXWIN)\samples\sample.rc" />
