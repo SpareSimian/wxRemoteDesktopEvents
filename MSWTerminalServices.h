@@ -32,6 +32,8 @@ enum SessionChangeType
    SESSION_TERMINATE
 };
 
+const char* GetSessionChangeTypeName(SessionChangeType sessionChangeType);
+
 class SessionChangeEvent : public wxEvent
 {
 public:
@@ -45,10 +47,11 @@ public:
 };
 
 extern const wxEventType SessionChangeEventType;
+wxDECLARE_EVENT(EVT_WTS_SESSION_CHANGE, SessionChangeEvent);
 
 typedef void (wxEvtHandler::*SessionChangeEventFunction)(SessionChangeEvent &);
 
-#define EVT_THREAD_EXCEPTION(fn) \
+#define EVT_SESSION_CHANGE(fn) \
     DECLARE_EVENT_TABLE_ENTRY( SessionChangeEventType, wxID_ANY, wxID_ANY, \
                                (wxObjectEventFunction)(wxEventFunction) \
                                wxStaticCastEvent(SessionChangeEventFunction, &fn), \

@@ -4,6 +4,8 @@
 
 using namespace MSWTerminalServices;
 
+wxDEFINE_EVENT(MSWTerminalServices::EVT_WTS_SESSION_CHANGE, SessionChangeEvent);
+
 SessionChangeNotification::SessionChangeNotification(wxWindow& win_) :
     win(win_)
 {
@@ -78,12 +80,38 @@ bool SessionChangeNotification::MSWWindowProc(wxWindow* win, WXUINT message, WXW
 
 bool SessionChangeNotification::HandleEvent(wxWindow* win, SessionChangeType sessionChangeType, wxInt64 sessionID)
 {
+   wxString msg("HandleEvent({type=");
+   msg << GetSessionChangeTypeName(sessionChangeType);
+   msg << ",id=";
+   msg << sessionID;
+   msg << "})\n";
+   OutputDebugStringA(msg.c_str());
    SessionChangeEvent event(sessionChangeType, sessionID);
    return win->HandleWindowEvent(event);
 }
 
 wxEvent* SessionChangeEvent::Clone() const { return new SessionChangeEvent(*this); }
 
+const char* MSWTerminalServices::GetSessionChangeTypeName(SessionChangeType sessionChangeType)
+{
+   switch( sessionChangeType)
+   {
+   case CONSOLE_CONNECT: return "CONSOLE_CONNECT";
+   case CONSOLE_DISCONNECT: return "CONSOLE_DISCONNECT";
+   case REMOTE_CONNECT: return "REMOTE_CONNECT";
+   case REMOTE_DISCONNECT: return "REMOTE_DISCONNECT";
+   case SESSION_LOGON: return "SESSION_LOGON";
+   case SESSION_LOGOFF: return "SESSION_LOGOFF";
+   case SESSION_LOCK: return "SESSION_LOCK";
+   case SESSION_UNLOCK: return "SESSION_UNLOCK";
+   case SESSION_REMOTE_CONTROL: return "SESSION_REMOTE_CONTROL";
+   case SESSION_CREATE: return "SESSION_CREATE";
+   case SESSION_TERMINATE: return "SESSION_TERMINATE";
+   }
+   return "unknown SessionChangeType code";
+}
+
 #pragma comment(lib, "wtsapi32.lib")
 
 DEFINE_EVENT_TYPE(SessionChangeEventType);
+

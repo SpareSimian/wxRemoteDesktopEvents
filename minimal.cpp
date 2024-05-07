@@ -37,6 +37,7 @@
 #endif
 
 #include "MSWTerminalServices.h"
+namespace wts = MSWTerminalServices;
 #include <wx/persist/toplevel.h>
 
 // ----------------------------------------------------------------------------
@@ -66,9 +67,10 @@ public:
     // event handlers (these functions should _not_ be virtual)
     void OnQuit(wxCommandEvent& event);
     void OnAbout(wxCommandEvent& event);
+    void OnSessionChange(wts::SessionChangeEvent& event);
 
 private:
-   MSWTerminalServices::SessionChangeNotification sessionChangeNotification;
+   wts::SessionChangeNotification sessionChangeNotification;
    
     // any class wishing to process wxWidgets events must use this macro
     wxDECLARE_EVENT_TABLE();
@@ -184,10 +186,20 @@ MyFrame::MyFrame(const wxString& title)
     SetStatusText("Welcome to wxWidgets!");
 #endif // wxUSE_STATUSBAR
 
+    Bind(wts::EVT_WTS_SESSION_CHANGE, &MyFrame::OnSessionChange, this);
     // remember position from last program run
     wxPersistentRegisterAndRestore(this);
 }
 
+void MyFrame::OnSessionChange(wts::SessionChangeEvent& event)
+{
+   wxString msg("OnSessionChange({type=");
+   msg << wts::GetSessionChangeTypeName(event.sessionChangeType);
+   msg << ",id=";
+   msg << event.sessionID;
+   msg << "})\n";
+   OutputDebugStringA(msg.c_str());
+}
 
 // event handlers
 
