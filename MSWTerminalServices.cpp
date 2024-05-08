@@ -6,6 +6,11 @@ using namespace MSWTerminalServices;
 
 wxDEFINE_EVENT(MSWTerminalServices::EVT_WTS_SESSION_CHANGE, SessionChangeEvent);
 
+SessionChangeEvent::SessionChangeEvent(wxWindow* win, SessionChangeType sessionChangeType_, wxInt64 sessionID_) :
+    sessionChangeType(sessionChangeType_), sessionID(sessionID_),
+    wxEvent(win ? win->GetId() : 0, EVT_WTS_SESSION_CHANGE)
+{}
+
 SessionChangeNotification::SessionChangeNotification(wxWindow& win_) :
     win(win_)
 {
@@ -80,13 +85,15 @@ bool SessionChangeNotification::MSWWindowProc(wxWindow* win, WXUINT message, WXW
 
 bool SessionChangeNotification::HandleEvent(wxWindow* win, SessionChangeType sessionChangeType, wxInt64 sessionID)
 {
+#if 0 // debug output
    wxString msg("HandleEvent({type=");
    msg << GetSessionChangeTypeName(sessionChangeType);
    msg << ",id=";
    msg << sessionID;
    msg << "})\n";
    OutputDebugStringA(msg.c_str());
-   SessionChangeEvent event(sessionChangeType, sessionID);
+#endif
+   SessionChangeEvent event(win, sessionChangeType, sessionID);
    return win->HandleWindowEvent(event);
 }
 

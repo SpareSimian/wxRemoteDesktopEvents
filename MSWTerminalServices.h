@@ -37,9 +37,7 @@ const char* GetSessionChangeTypeName(SessionChangeType sessionChangeType);
 class SessionChangeEvent : public wxEvent
 {
 public:
-   SessionChangeEvent(SessionChangeType sessionChangeType_, wxInt64 sessionID_) :
-       sessionChangeType(sessionChangeType_), sessionID(sessionID_)
-   {}
+   SessionChangeEvent::SessionChangeEvent(wxWindow* win, SessionChangeType sessionChangeType_, wxInt64 sessionID_);
    wxEvent* Clone() const override;
 
    SessionChangeType sessionChangeType;
