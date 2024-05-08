@@ -2,7 +2,7 @@
 
 #ifdef __WXMSW__
 
-#include <wx/window.h>
+#include <wx/event.h>
 
 namespace MSWTerminalServices {
    
