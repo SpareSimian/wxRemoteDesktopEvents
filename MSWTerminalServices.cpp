@@ -6,24 +6,24 @@ using namespace MSWTerminalServices;
 
 wxDEFINE_EVENT(MSWTerminalServices::EVT_WTS_SESSION_CHANGE, SessionChangeEvent);
 
-SessionChangeEvent::SessionChangeEvent(wxWindow* win, SessionChangeType sessionChangeType_, wxInt64 sessionID_) :
-    sessionChangeType(sessionChangeType_), sessionID(sessionID_),
+SessionChangeEvent::SessionChangeEvent(wxWindow* win, SessionChangeReason sessionChangeReason_, wxInt64 sessionID_) :
+    sessionChangeReason(sessionChangeReason_), sessionID(sessionID_),
     wxEvent(win ? win->GetId() : 0, EVT_WTS_SESSION_CHANGE)
 {}
 
-SessionChangeNotification::SessionChangeNotification(wxWindow& win_) :
+RegisterForSessionChangeNotification::RegisterForSessionChangeNotification(wxWindow& win_) :
     win(win_)
 {
    ::WTSRegisterSessionNotification(win.GetHWND(), NOTIFY_FOR_THIS_SESSION);
    win.MSWRegisterMessageHandler(WM_WTSSESSION_CHANGE, MSWWindowProc);
 }
 
-SessionChangeNotification::~SessionChangeNotification()
+RegisterForSessionChangeNotification::~RegisterForSessionChangeNotification()
 {
    ::WTSUnRegisterSessionNotification(win.GetHWND());
 }
 
-bool SessionChangeNotification::MSWWindowProc(wxWindow* win, WXUINT message, WXWPARAM wParam, WXLPARAM lParam)
+bool RegisterForSessionChangeNotification::MSWWindowProc(wxWindow* win, WXUINT message, WXWPARAM wParam, WXLPARAM lParam)
 {
    // invoke from client window's version of this routine
    if (WM_WTSSESSION_CHANGE != message)
@@ -83,25 +83,25 @@ bool SessionChangeNotification::MSWWindowProc(wxWindow* win, WXUINT message, WXW
    }
 }
 
-bool SessionChangeNotification::HandleEvent(wxWindow* win, SessionChangeType sessionChangeType, wxInt64 sessionID)
+bool RegisterForSessionChangeNotification::HandleEvent(wxWindow* win, SessionChangeReason sessionChangeReason, wxInt64 sessionID)
 {
 #if 0 // debug output
    wxString msg("HandleEvent({type=");
-   msg << GetSessionChangeTypeName(sessionChangeType);
+   msg << GetSessionChangeReasonName(sessionChangeReason);
    msg << ",id=";
    msg << sessionID;
    msg << "})\n";
    OutputDebugStringA(msg.c_str());
 #endif
-   SessionChangeEvent event(win, sessionChangeType, sessionID);
+   SessionChangeEvent event(win, sessionChangeReason, sessionID);
    return win->HandleWindowEvent(event);
 }
 
 wxEvent* SessionChangeEvent::Clone() const { return new SessionChangeEvent(*this); }
 
-const char* MSWTerminalServices::GetSessionChangeTypeName(SessionChangeType sessionChangeType)
+const char* MSWTerminalServices::ToString(SessionChangeReason sessionChangeReason)
 {
-   switch( sessionChangeType)
+   switch( sessionChangeReason)
    {
    case CONSOLE_CONNECT: return "CONSOLE_CONNECT";
    case CONSOLE_DISCONNECT: return "CONSOLE_DISCONNECT";
@@ -115,7 +115,7 @@ const char* MSWTerminalServices::GetSessionChangeTypeName(SessionChangeType sess
    case SESSION_CREATE: return "SESSION_CREATE";
    case SESSION_TERMINATE: return "SESSION_TERMINATE";
    }
-   return "unknown SessionChangeType code";
+   return "unknown SessionChangeReason code";
 }
 
 #pragma comment(lib, "wtsapi32.lib")

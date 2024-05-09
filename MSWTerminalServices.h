@@ -6,7 +6,7 @@
 
 namespace MSWTerminalServices {
    
-enum SessionChangeType
+enum SessionChangeReason
 {
       // The session identified by lParam was connected to the console terminal or RemoteFX session.
    CONSOLE_CONNECT,
@@ -32,15 +32,15 @@ enum SessionChangeType
    SESSION_TERMINATE
 };
 
-const char* GetSessionChangeTypeName(SessionChangeType sessionChangeType);
+const char* ToString(SessionChangeReason sessionChangeReason);
 
 class SessionChangeEvent : public wxEvent
 {
 public:
-   SessionChangeEvent::SessionChangeEvent(wxWindow* win, SessionChangeType sessionChangeType_, wxInt64 sessionID_);
+   SessionChangeEvent::SessionChangeEvent(wxWindow* win, SessionChangeReason sessionChangeReason_, wxInt64 sessionID_);
    wxEvent* Clone() const override;
 
-   SessionChangeType sessionChangeType;
+   SessionChangeReason sessionChangeReason;
    wxInt64 sessionID;
 };
 
@@ -55,17 +55,17 @@ typedef void (wxEvtHandler::*SessionChangeEventFunction)(SessionChangeEvent &);
                                wxStaticCastEvent(SessionChangeEventFunction, &fn), \
                                (wxObject*) NULL  ),
 
-class SessionChangeNotification
+class RegisterForSessionChangeNotification
 {
    wxWindow& win; // for event dispatch and deregistration
 public:
-   SessionChangeNotification(wxWindow& win);
-   ~SessionChangeNotification();
+   RegisterForSessionChangeNotification(wxWindow& win);
+   ~RegisterForSessionChangeNotification();
    private:
       static bool MSWWindowProc(wxWindow* win, WXUINT message, WXWPARAM wParam, WXLPARAM lParam);
-      static bool HandleEvent(wxWindow* win, SessionChangeType sessionChangeType, wxInt64 sessionID);
+      static bool HandleEvent(wxWindow* win, SessionChangeReason sessionChangeReason, wxInt64 sessionID);
 
-   wxDECLARE_NO_COPY_CLASS(SessionChangeNotification);
+   wxDECLARE_NO_COPY_CLASS(RegisterForSessionChangeNotification);
 };
 
 }

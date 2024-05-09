@@ -39,6 +39,7 @@
 #include "MSWTerminalServices.h"
 namespace wts = MSWTerminalServices;
 #include <wx/persist/toplevel.h>
+#include <wx/display.h>
 
 // ----------------------------------------------------------------------------
 // private classes
@@ -67,10 +68,13 @@ public:
     // event handlers (these functions should _not_ be virtual)
     void OnQuit(wxCommandEvent& event);
     void OnAbout(wxCommandEvent& event);
+    void OnDisplayChanged(wxDisplayChangedEvent& event);
+    void OnDPIChanged(wxDPIChangedEvent& event);
     void OnSessionChange(wts::SessionChangeEvent& event);
 
 private:
-   wts::SessionChangeNotification sessionChangeNotification;
+   wts::RegisterForSessionChangeNotification registerForSessionChangeNotification;
+   void logDisplaySize() const;
    
     // any class wishing to process wxWidgets events must use this macro
     wxDECLARE_EVENT_TABLE();
@@ -147,7 +151,7 @@ bool MyApp::OnInit()
 // frame constructor
 MyFrame::MyFrame(const wxString& title)
 :
-    sessionChangeNotification(*this),
+    registerForSessionChangeNotification(*this),
     wxFrame(nullptr, wxID_ANY, title)
 
 {
@@ -186,22 +190,43 @@ MyFrame::MyFrame(const wxString& title)
     SetStatusText("Welcome to wxWidgets!");
 #endif // wxUSE_STATUSBAR
 
+    logDisplaySize();
     Bind(wts::EVT_WTS_SESSION_CHANGE, &MyFrame::OnSessionChange, this);
+    Bind(wxEVT_DISPLAY_CHANGED, &MyFrame::OnDisplayChanged, this);
+    Bind( wxEVT_DPI_CHANGED, &MyFrame::OnDPIChanged, this);
     // remember position from last program run
     wxPersistentRegisterAndRestore(this);
 }
 
+// event handlers
+
 void MyFrame::OnSessionChange(wts::SessionChangeEvent& event)
 {
    wxString msg("OnSessionChange({type=");
-   msg << wts::GetSessionChangeTypeName(event.sessionChangeType);
+   msg << wts::ToString(event.sessionChangeReason);
    msg << ",id=";
    msg << event.sessionID;
    msg << "})\n";
    OutputDebugStringA(msg.c_str());
+   logDisplaySize();
 }
 
-// event handlers
+void MyFrame::OnDPIChanged(wxDPIChangedEvent& event)
+{
+   wxString msg("DPI changed:");
+   msg << " was " << event.GetOldDPI().x << " * " << event.GetOldDPI().y << ", ";
+   msg << " now " << event.GetNewDPI().x << " * " << event.GetNewDPI().y << "\n";
+   OutputDebugStringA(msg.c_str());
+   logDisplaySize();
+   event.Skip();
+}
+
+void MyFrame::OnDisplayChanged(wxDisplayChangedEvent& event)
+{
+   OutputDebugStringA("Display resolution was changed.\n");
+   logDisplaySize();
+   event.Skip();
+}
 
 void MyFrame::OnQuit(wxCommandEvent& WXUNUSED(event))
 {
@@ -224,3 +249,15 @@ void MyFrame::OnAbout(wxCommandEvent& WXUNUSED(event))
                  wxOK | wxICON_INFORMATION,
                  this);
 }
+
+void MyFrame::logDisplaySize() const
+{
+   const wxRect rect = wxDisplay(this).GetClientArea();
+   wxString msg("Display: ");
+   msg << rect.GetLeft() << ", ";
+   msg << rect.GetTop() << ", ";
+   msg << rect.GetRight() << ", ";
+   msg << rect.GetBottom() << "\n";
+   OutputDebugStringA(msg.c_str());
+}
+
